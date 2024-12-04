@@ -1,5 +1,3 @@
-const passport = require('passport');
-
 exports.checkToken = (req, res, next) => {
     const header = req.headers['authorization'];
 
