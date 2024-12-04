@@ -2,10 +2,12 @@ const asyncHandler = require('express-async-handler');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
+const jwt = require('jsonwebtoken');
 
 const UserSchema = require('../models/user');
 const MessageSchema = require('../models/message');
 
+// Protected route
 exports.index_get = asyncHandler(async (req, res, next) => {
     console.log(`${req.method} ${req.originalUrl} ${req.statusCode}`);
 
@@ -15,16 +17,27 @@ exports.index_get = asyncHandler(async (req, res, next) => {
     //     .populate("user")
     //     .exec();
 
-    res.render('index', 
-        { 
-            title: 'Message Board',
-            user: res.locals.currentUser,
-            isUserLoggedIn: !!res.locals.currentUser, 
-        });
+    jwt.verify(req.token, process.env.JWT_SECRET, (err, authorizedData) => {
+        if (err) {
+            res.status(403).json({ 
+                message: 'Autentication credentials were not provided.',
+                error: err.message
+             });
+
+        } else {
+            res.render('index', 
+                { 
+                    title: 'Message Board',
+                    user: authorizedData,
+                    isUserLoggedIn: true, 
+                });
+        }
+    });
+
 });
 
 
-exports.user_create_get = asyncHandler(function (req, res, next) {
+exports.get_users = asyncHandler(function (req, res, next) {
     console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
     res.setHeader('Content-Type', 'application/json');
 
