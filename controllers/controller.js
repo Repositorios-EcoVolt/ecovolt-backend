@@ -3,11 +3,11 @@ const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 
-const logger = require('./logger');
-const MessageSchema = require('./models/message');
+const UserSchema = require('../models/user');
+const MessageSchema = require('../models/message');
 
 exports.index_get = asyncHandler(async (req, res, next) => {
-    logger.info(`${req.method} ${req.originalUrl} ${req.statusCode}`);
+    console.log(`${req.method} ${req.originalUrl} ${req.statusCode}`);
 
     // Query to MongoDB
     // const messages = await MessageSchema.find({ deleted: false })
@@ -25,26 +25,32 @@ exports.index_get = asyncHandler(async (req, res, next) => {
 
 
 exports.user_create_get = asyncHandler(function (req, res, next) {
-    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode}`);
+    console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
+    res.setHeader('Content-Type', 'application/json');
 
-    if(res.locals.currentUser) {
-        res.redirect('/');
-        return;
-    } 
-
-    logger.info('User registration form');
-
-    res.render("signup", {
-        title: "Sign Up",
-        user: null,
-        isUserLoggedIn: false,
+    res.send({
+        title: 'Sign Up',
+        user:  null,
+        isUserLoggedIn: res.body.currentUser !== null,
         newUser: {
-            first_name: "",
-            last_name: "",
-            email: ""
+            first_name: '',
+            last_name: '',
+            email: ''
         },
         errors: []
-    });
+    })
+
+    // res.render("signup", {
+    //     title: "Sign Up",
+    //     user: null,
+    //     isUserLoggedIn: false,
+    //     newUser: {
+    //         first_name: "",
+    //         last_name: "",
+    //         email: ""
+    //     },
+    //     errors: []
+    // });
 });
 
 exports.user_create_post = [
@@ -68,14 +74,15 @@ exports.user_create_post = [
 
     // Main function
     asyncHandler(async function (req, res, next) {
-        logger.info(`${req.method} ${req.originalUrl} ${res.statusCode}`);
+        console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
 
         const errors = validationResult(req);
 
         const { first_name, last_name, email, password } = req.body;
+        res.setHeader('Content-Type', 'application/json');
 
         if (!errors.isEmpty()) {
-            res.render('signup', {
+            res.send({
                 title: 'Sign Up',
                 user: null,
                 isUserLoggedIn: false,
@@ -111,10 +118,19 @@ exports.user_create_post = [
                 })
 
                 await user.save();
-                res.redirect('/login?');
+                res.send({
+                    username: user.username,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    email: user.email,
+                    roles: user.roles,
+                    created_at: user.created_at,
+                });
             });
         } catch (err) {
-            return next(err);
+            res.send({
+                detail: err.message
+            });
         }
     })
 ]

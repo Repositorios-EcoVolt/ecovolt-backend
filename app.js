@@ -7,8 +7,14 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
+// Database
 const useDatabase = require('./database');
 useDatabase().catch((err) => console.error(err));
+
+const passport = require('./auth');
+const mongoSession = require('./mongoSession');
+
+const session = require('express-session');
 
 var app = express();
 
@@ -21,6 +27,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(passport.initialize()); // Authentication system
+
+// Middleware
+app.use(function (req, res, next) {
+  res.locals.currentUser = req.user;
+  next();
+});
+
+app.use(session(mongoSession.config));
+app.use(passport.session());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
