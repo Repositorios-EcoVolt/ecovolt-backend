@@ -1,18 +1,18 @@
 var express = require('express');
 var router = express.Router();
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+const userController = require('../controllers/userController');
+const middleware = require('../controllers/middleware');
 
 /* Show all users */
+router.get('/', middleware.checkToken, userController.get_users);
 
 /* Show current user */
 
 /* Create new user */
+router.post('/create', middleware.checkToken, userController.create_user);
 
-/* Update user */
+/* Update user (for example change password) */
 
 /* Delete user */
 

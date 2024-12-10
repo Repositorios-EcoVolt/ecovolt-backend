@@ -13,18 +13,18 @@ exports.login = asyncHandler(async (req, res, next) => {
         const user = await UserSchema.findOne({ username: username });
 
         if (!user) {
-            return res.status(401).json({ message: 'Invalid username' });
+            return res.status(401).json({ message: 'Invalid username or password.' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid password.' });
+            return res.status(401).json({ message: 'Invalid password or password.' });
         }
 
         // Modify last login attribute in database
         user.last_login = new Date();
-        UserSchema.updateOne({ last_login: user.last_login });
+        user.save();
 
         // Avoid the password attribute in the token
         const userDTO = {
@@ -47,19 +47,3 @@ exports.login = asyncHandler(async (req, res, next) => {
     }
 })
 
-/*
-const checkToken = (req, res, next) => {
-    passport.authenticate('jwt', { session: false }, (err, user, info) => {
-        if (err) {
-            return next(err);
-        }
-
-        if (!user) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-
-        req.user = user;
-        return next();
-    })(req, res, next);
-}
-*/
