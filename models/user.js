@@ -7,10 +7,12 @@ const UserSchema = new Schema({
     last_name: { type: String, required: true },
     email: { type: String, required: true},
     password: { type: String, required: true },
-    roles: [{ type: String, enum: ['admin', 'user'] }],
+    roles: [{ type: String, enum: ['admin', 'moderator', 'user'], required: true }],
     created_at: { type: Date, required: true },
     updated_at: { type: Date, required: false },
-    last_login: { type: Date, required: false }
+    last_login: { type: Date, required: false },
+    verified: { type: Boolean, required: false },
+    active: { type: Boolean, default: true, required: false }
 });
 
 UserSchema.virtual('full_name').get(function() {
