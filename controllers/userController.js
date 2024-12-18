@@ -1,7 +1,9 @@
 const { body, validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
-const UserSchema = require('../models/user');
+const jwt = require('jsonwebtoken');
+const user = require('../models/user');
+const BlacklistedTokenSchema = require('../models/backlistedToken');
 
 
 exports.create_user = [
@@ -10,7 +12,7 @@ exports.create_user = [
     body('first_name', 'First name must not be empty.').trim().isLength({ min: 1 }).escape(),
     body('last_name', 'Last name must not be empty.').trim().isLength({ min: 1 }).escape(),
     body('email', 'Email must not be empty.').trim().isLength({ min: 1 }).escape(),
-    body('password', 'Password must not be empty.').trim().isLength({ min: 1 }).escape(),
+    body('password', 'Password must not be empty.').trim().isLength({ min: 12 }).escape(),
     body('role', 'Role must not be empty.').trim().isLength({ min: 1 }).escape(),
 
     // Validators 
@@ -23,9 +25,59 @@ exports.create_user = [
         return true;
     }),
 
+    body('email').isEmail().withMessage('Invalid email address.').normalizeEmail(),
+
+    body('password').custom(async (value) => {
+        if (!value.match(/[A-Z]/))
+            throw new Error('Password must contain at least one uppercase letter.');
+
+        if (!value.match(/[a-z]/))
+            throw new Error('Password must contain at least one lowercase letter.');
+
+        if (!value.match(/[0-9]/))
+            throw new Error('Password must contain at least one number.');
+        
+        if (!value.match(/[!@#$%^&*]/))
+            throw new Error('Password must contain at least one special character.');
+
+        if (value.includes(req.body.username)) {
+            throw new Error('Password must not contain the username.');
+        }
+        
+        if (value.includes(req.body.first_name)) {
+            throw new Error('Password must not contain the first name.');
+        }
+
+        if (value.includes(req.body.last_name)) {
+            throw new Error('Password must not contain the last name.');
+        }
+
+        if (value.includes(req.body.email)) {
+            throw new Error('Password must not contain the email.');
+        }
+
+        // TO DO: Add more common passwords using MongoDB database
+        const commonPasswords = ['1230', 'password']
+
+        if (commonPasswords.includes(value)) {
+            throw new Error('Password is too common.');
+        }
+        
+        return true;
+    }),
+    
+    body('role').custom(async (value) => {
+        const roles = ['user', 'admin', 'moderator'];
+
+        if (!roles.includes(value)) {
+            throw new Error('Invalid role.\n The only valid roles are: "user", "admin", and "moderator".');
+        }
+
+        return true;
+    }),
+
     // Main function
     asyncHandler(async function (req, res, next) {
-        console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
         res.setHeader('Content-Type', 'application/json');
 
         const errors = validationResult(req);
@@ -57,12 +109,13 @@ exports.create_user = [
                     roles: [req.body.role],
                     created_at: new Date(),
                     updated_at: null,
-                    last_login: null
+                    last_login: null,
+                    verified: false
                 })
 
                 // Save user in database
                 await user.save();
-                
+
                 // Return user data (DTO)
                 res.status(201).send({
                     username: user.username,
@@ -71,6 +124,7 @@ exports.create_user = [
                     email: user.email,
                     roles: user.roles,
                     created_at: user.created_at,
+                    verified: user.verified
                 });
             });
         } catch (err) {
@@ -81,10 +135,79 @@ exports.create_user = [
     })
 ]
 
-exports.get_users = asyncHandler(function (req, res, next) {
-    console.log(`${req.method} ${req.originalUrl} ${res.statusCode}`);
+
+exports.get_user = asyncHandler(async function (req, res, next) {
     res.setHeader('Content-Type', 'application/json');
 
-    const users = UserSchema.find();
-    res.send(users.find());
+    // Get JWT token (bearer) from authorization header
+    const header = req.headers['authorization'];
+    let token = null;
+    
+    if (typeof header !== 'undefined') {
+        // Extract token from header
+        const bearer = header.split(' ');
+        token = bearer[1];
+    } else {
+        // Extract token from cookie
+        if(req.cookies['JWT_token'])
+            token = req.cookies['JWT_token'];
+        else 
+            // JWT token not provided
+            return res.status(200).send({user: 'Anonymous user.'});
+    }
+
+    req.token = token;
+    
+
+    // Verify if a user is logged in through JWT token
+    jwt.verify(req.token, process.env.JWT_SECRET, async (err, authorizedData) => {
+        if (err) {
+            // No valid JWT token
+            return res.status(200).send({user: 'Anonymous user.'});
+        } else {
+            // Check if token is blacklisted
+            const blacklistedToken = await BlacklistedTokenSchema.findOne({ token: token });
+
+            // JWT token is blacklisted
+            if (blacklistedToken)
+                return res.status(200).send({user: 'Anonymous user.'});
+                
+            // Decode JWT token
+            const decodedJWT = jwt.decode(req.token, { complete: true });
+
+            // Get current user
+            const currentUser = decodedJWT.payload.userDTO;
+                
+            // Return user data (DTO)
+            return res.status(200).send(currentUser);
+        }
+    });
+});
+
+
+exports.get_users = asyncHandler(async function (req, res, next) {
+    res.setHeader('Content-Type', 'application/json');
+
+    try {
+        const users = await user.find();
+
+        const usersDTO = users.map((user) => {
+            return {
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                email: user.email,
+                roles: user.roles,
+                created_at: user.created_at,
+                updated_at: user.updated_at,
+                last_login: user.last_login
+            }
+        });
+
+        res.status(200).send(usersDTO);
+    } catch (err) {
+        res.status(500).send({
+            detail: err.message
+        });
+    }
 });

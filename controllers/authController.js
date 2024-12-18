@@ -1,10 +1,11 @@
 const asyncHandler = require('express-async-handler')
 const jwt = require('jsonwebtoken');
-const UserSchema = require('../models/user');
 const bcrypt = require('bcrypt');
 
+const UserSchema = require('../models/user');
+const BlacklistedTokenSchema = require('../models/backlistedToken');
+
 exports.login = asyncHandler(async (req, res, next) => {
-    console.log(`${req.method} ${req.originalUrl} ${req.statusCode}`);
     res.setHeader('Content-Type', 'application/json');
 
     const { username, password } = req.body;
@@ -41,9 +42,69 @@ exports.login = asyncHandler(async (req, res, next) => {
         // Create JWT token encoded with the userDTO as bearer
         const token = jwt.sign({ userDTO }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
+        // Set token in cookie
+        res.cookie('JWT_token', token, { httpOnly: true });
+
         return res.status(200).json({ token: token });
     } catch (err) {
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 })
 
+
+// TODO: Implement blacklist for tokens
+exports.logout = asyncHandler(async (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+
+    // Get JWT token (bearer) from authorization header
+    const header = req.headers['authorization'];
+    let token = null;
+
+    if (typeof header !== 'undefined') {
+        // Extract token from header
+        const bearer = header.split(' ');
+        token = bearer[1];
+    } else {
+        // Extract token from cookie
+        if(req.cookies['JWT_token'])
+            token = req.cookies['JWT_token'];
+        else
+            return res.status(200).json({ message: 'You are not logged in.' });
+    }
+    
+    req.token = token;
+
+    // Verify if a user is logged in through JWT token
+    jwt.verify(req.token, process.env.JWT_SECRET, async (err, authorizedData) => {
+        if (err) {
+            // No valid JWT token
+            return res.status(200).json({ message: 'You are not logged in.' });
+        } else {
+            // Check if the token is blacklisted
+            const isTokenBlacklisted = await BlacklistedTokenSchema.findOne({ token: token });
+
+            // If the token is blacklisted, return a message that the user is already logged out
+            if (isTokenBlacklisted) {
+                return res.status(200).json({ message: 'You are not logged in.' });
+            }
+
+            // Decode JWT
+            const decodedToken = jwt.decode(req.token);
+                
+            // Create new blacklisted token
+            const blacklistedToken = new BlacklistedTokenSchema({
+                token: req.token,
+                expire_at: new Date().setTime(decodedToken.exp * 1000)
+            });
+
+            // Save blacklisted token in database
+            await blacklistedToken.save();
+
+            // Erase cookie
+            res.clearCookie('JWT_token');
+
+            // Return success message
+            return res.status(200).json({ message: 'Logout successful.' });
+        }
+    })
+});

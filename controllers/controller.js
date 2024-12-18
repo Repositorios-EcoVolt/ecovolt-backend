@@ -8,10 +8,7 @@ const UserSchema = require('../models/user');
 const MessageSchema = require('../models/message');
 
 // Protected route (EXAMPLE)
-exports.index_get = asyncHandler(async (req, res, next) => {
-    console.log(`${req.method} ${req.originalUrl} ${req.statusCode}`);
-
-   
+exports.index_get = asyncHandler(async (req, res, next) => {   
     res.render('index', 
     { 
         title: 'Message Board',
@@ -22,7 +19,6 @@ exports.index_get = asyncHandler(async (req, res, next) => {
 
 // Healty check route
 exports.health_check = asyncHandler(async (req, res, next) => {
-    console.log(`${req.method} ${req.originalUrl} ${req.statusCode}`);
     res.setHeader('Content-Type', 'application/json');
-    res.status(200).send({ message: 'Server is running' });
+    res.status(200).send({ message: 'Server is running (all services operational).' });
 });

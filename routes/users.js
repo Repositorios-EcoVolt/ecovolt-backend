@@ -8,6 +8,7 @@ const middleware = require('../controllers/middleware');
 router.get('/', middleware.checkToken, userController.get_users);
 
 /* Show current user */
+router.get('/me', userController.get_user);
 
 /* Create new user */
 router.post('/create', middleware.checkToken, userController.create_user);
