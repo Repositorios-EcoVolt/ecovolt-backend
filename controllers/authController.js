@@ -40,7 +40,7 @@ exports.login = asyncHandler(async (req, res, next) => {
         }
 
         // Create JWT token encoded with the userDTO as bearer
-        const token = jwt.sign({ userDTO }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userDTO }, process.env.JWT_SECRET, { expiresIn: 300 });
 
         // Set token in cookie
         res.cookie('JWT_token', token, { httpOnly: true });
@@ -74,27 +74,30 @@ exports.logout = asyncHandler(async (req, res, next) => {
     
     req.token = token;
 
+    // Check if the token is blacklisted
+    const isTokenBlacklisted = await BlacklistedTokenSchema.findOne({ token: token });
+
+    // If the token is blacklisted, return a message that the user is already logged out
+    if (isTokenBlacklisted) {
+        return res.status(200).json({ message: 'You are not logged in.' });
+    }
+
     // Verify if a user is logged in through JWT token
     jwt.verify(req.token, process.env.JWT_SECRET, async (err, authorizedData) => {
-        if (err) {
-            // No valid JWT token
+        // Decode JWT token
+        const decodedJWT = jwt.decode(req.token, { complete: true });
+            
+        // If JWT is expired and can't be refreshed or it is invalid
+        if (err && !(err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300000 >= (Date.now()/1000))) {
             return res.status(200).json({ message: 'You are not logged in.' });
         } else {
-            // Check if the token is blacklisted
-            const isTokenBlacklisted = await BlacklistedTokenSchema.findOne({ token: token });
-
-            // If the token is blacklisted, return a message that the user is already logged out
-            if (isTokenBlacklisted) {
-                return res.status(200).json({ message: 'You are not logged in.' });
-            }
-
             // Decode JWT
             const decodedToken = jwt.decode(req.token);
                 
             // Create new blacklisted token
             const blacklistedToken = new BlacklistedTokenSchema({
                 token: req.token,
-                expire_at: new Date().setTime(decodedToken.exp * 1000)
+                expire_at: new Date().setTime((decodedToken.exp * 1000) + 300000)
             });
 
             // Save blacklisted token in database

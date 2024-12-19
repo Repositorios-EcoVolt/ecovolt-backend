@@ -157,30 +157,60 @@ exports.get_user = asyncHandler(async function (req, res, next) {
     }
 
     req.token = token;
-    
+
+    // Check if token is blacklisted
+    const blacklistedToken = await BlacklistedTokenSchema.findOne({ token: token });
+
+    // JWT token is blacklisted
+    if (blacklistedToken)
+        return res.status(200).send({user: 'Anonymous user.'});
 
     // Verify if a user is logged in through JWT token
     jwt.verify(req.token, process.env.JWT_SECRET, async (err, authorizedData) => {
         if (err) {
-            // No valid JWT token
-            return res.status(200).send({user: 'Anonymous user.'});
-        } else {
-            // Check if token is blacklisted
-            const blacklistedToken = await BlacklistedTokenSchema.findOne({ token: token });
-
-            // JWT token is blacklisted
-            if (blacklistedToken)
-                return res.status(200).send({user: 'Anonymous user.'});
-                
+            // --------------------------------------------------
+            // Handle when JWT token is expired or invalid
+            // --------------------------------------------------
+            
             // Decode JWT token
             const decodedJWT = jwt.decode(req.token, { complete: true });
+                            
+            // If JWT is expired refresh token if it is expired by 5 minutes (max 5 minutes of inactivity)
+            if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300000 >= (Date.now()/1000)) {
+                // Blacklist previous token
+                const blacklistedToken = new BlacklistedTokenSchema({ 
+                    token: req.token,
+                    expire_at: new Date().setTime((decodedJWT.payload.exp * 1000) + 300000)
+                });
 
-            // Get current user
-            const currentUser = decodedJWT.payload.userDTO;
+                // Save blacklisted token in database
+                await blacklistedToken.save();
+
+                // Refresh JWT token
+                const userDTO = decodedJWT.payload.userDTO;
+                const token = jwt.sign({ userDTO }, process.env.JWT_SECRET, { expiresIn: 300 });
+            
+                // Erase previous cookie
+                res.clearCookie('JWT_token');
+            
+                // Set token in cookie
+                res.cookie('JWT_token', token, { httpOnly: true });            
+ 
+            } else {
+                // No valid JWT token
+                return res.status(200).send({user: 'Anonymous user.'});
+            } 
+        } 
+
+        // Decode JWT token
+        const decodedJWT = jwt.decode(req.token, { complete: true });
+
+        // Get current user
+        const currentUser = decodedJWT.payload.userDTO;
                 
-            // Return user data (DTO)
-            return res.status(200).send(currentUser);
-        }
+        // Return user data (DTO)
+        return res.status(200).send(currentUser);
+        
     });
 });
 
