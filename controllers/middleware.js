@@ -180,3 +180,5 @@ exports.refreshToken = async (req, res, next) => {
     });
 }
 
+
+/* Action confirmation for dangerous actions */

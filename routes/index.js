@@ -9,7 +9,7 @@ const userController = require('../controllers/userController');
 const usersRouter = require('./users');
 
 /* GET home page. */
-router.get('/', middleware.checkToken, controller.index_get);
+router.get('/', middleware.refreshToken, controller.health_check);
 router.post('/login', authController.login);
 router.get('/logout', authController.logout);
 router.get('/users', usersRouter);

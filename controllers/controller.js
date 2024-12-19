@@ -7,16 +7,6 @@ const jwt = require('jsonwebtoken');
 const UserSchema = require('../models/user');
 const MessageSchema = require('../models/message');
 
-// Protected route (EXAMPLE)
-exports.index_get = asyncHandler(async (req, res, next) => {   
-    res.render('index', 
-    { 
-        title: 'Message Board',
-        user: authorizedData,
-        isUserLoggedIn: true, 
-    });
-});
-
 // Healty check route
 exports.health_check = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');

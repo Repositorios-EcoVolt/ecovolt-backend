@@ -3,6 +3,8 @@ const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const user = require('../models/user');
+
+const UserSchema = require('../models/user');
 const BlacklistedTokenSchema = require('../models/backlistedToken');
 
 
@@ -12,7 +14,7 @@ exports.create_user = [
     body('first_name', 'First name must not be empty.').trim().isLength({ min: 1 }).escape(),
     body('last_name', 'Last name must not be empty.').trim().isLength({ min: 1 }).escape(),
     body('email', 'Email must not be empty.').trim().isLength({ min: 1 }).escape(),
-    body('password', 'Password must not be empty.').trim().isLength({ min: 12 }).escape(),
+    body('password', 'Password must not be empty.').trim().isLength({ min: 1 }).escape(),
     body('role', 'Role must not be empty.').trim().isLength({ min: 1 }).escape(),
 
     // Validators 
@@ -39,6 +41,9 @@ exports.create_user = [
         
         if (!value.match(/[!@#$%^&*]/))
             throw new Error('Password must contain at least one special character.');
+
+        if(value.length < 12)
+            throw new Error('Password must be at least 12 characters long.');
 
         if (value.includes(req.body.username)) {
             throw new Error('Password must not contain the username.');
@@ -80,7 +85,7 @@ exports.create_user = [
     asyncHandler(async function (req, res, next) {
         res.setHeader('Content-Type', 'application/json');
 
-        const errors = validationResult(req);
+        const errors = validationResult(req.body);
         const { first_name, last_name, email, password } = req.body;
 
         if (!errors.isEmpty()) {
@@ -240,4 +245,26 @@ exports.get_users = asyncHandler(async function (req, res, next) {
             detail: err.message
         });
     }
+});
+
+
+exports.delete_user = asyncHandler(async function (req, res, next) {
+    // Get username from URL
+    const username = req.params['username'];
+
+    // Get user object to delete
+    const userToDelete = await user.findOne({ username: username });
+
+    // Check if user exists
+    if (!userToDelete) {
+        return res.status(404).send({
+            detail: 'User not found.'
+        });
+    }
+
+    // Delete user
+    await userToDelete.deleteOne();
+
+    // Return success message
+    res.status(204).send();
 });
