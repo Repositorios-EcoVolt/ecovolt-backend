@@ -179,9 +179,9 @@ exports.get_user = asyncHandler(async function (req, res, next) {
             
             // Decode JWT token
             const decodedJWT = jwt.decode(req.token, { complete: true });
-                            
+
             // If JWT is expired refresh token if it is expired by 5 minutes (max 5 minutes of inactivity)
-            if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300000 >= (Date.now()/1000)) {
+            if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300 >= (Date.now()/1000)) {
                 // Blacklist previous token
                 const blacklistedToken = new BlacklistedTokenSchema({ 
                     token: req.token,
@@ -256,11 +256,10 @@ exports.delete_user = asyncHandler(async function (req, res, next) {
     const userToDelete = await user.findOne({ username: username });
 
     // Check if user exists
-    if (!userToDelete) {
+    if (!userToDelete) 
         return res.status(404).send({
             detail: 'User not found.'
         });
-    }
 
     // Delete user
     await userToDelete.deleteOne();

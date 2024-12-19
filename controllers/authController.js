@@ -52,7 +52,6 @@ exports.login = asyncHandler(async (req, res, next) => {
 })
 
 
-// TODO: Implement blacklist for tokens
 exports.logout = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
 
@@ -87,17 +86,12 @@ exports.logout = asyncHandler(async (req, res, next) => {
         // Decode JWT token
         const decodedJWT = jwt.decode(req.token, { complete: true });
             
-        // If JWT is expired and can't be refreshed or it is invalid
-        if (err && !(err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300000 >= (Date.now()/1000))) {
-            return res.status(200).json({ message: 'You are not logged in.' });
-        } else {
-            // Decode JWT
-            const decodedToken = jwt.decode(req.token);
-                
+        
+        if (!err || (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300 >= (Date.now()/1000))) {
             // Create new blacklisted token
             const blacklistedToken = new BlacklistedTokenSchema({
                 token: req.token,
-                expire_at: new Date().setTime((decodedToken.exp * 1000) + 300000)
+                expire_at: new Date().setTime((decodedJWT.payload.exp * 1000) + 300000)
             });
 
             // Save blacklisted token in database
@@ -107,7 +101,10 @@ exports.logout = asyncHandler(async (req, res, next) => {
             res.clearCookie('JWT_token');
 
             // Return success message
-            return res.status(200).json({ message: 'Logout successful.' });
+            return res.status(200).json({ message: 'Logout successful.' });            
+        } else {
+            // If JWT is expired and can't be refreshed or it is invalid
+            return res.status(200).json({ message: 'You are not logged in.' });
         }
     })
 });

@@ -47,7 +47,7 @@ exports.checkToken = async (req, res, next) => {
             const decodedJWT = jwt.decode(req.token, { complete: true });
                 
             // If JWT is expired refresh token if it is expired by 5 minutes (max 5 minutes of inactivity)
-            if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300000 >= (Date.now()/1000)) {
+            if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300 >= (Date.now()/1000)) {
                 // Blacklist previous token
                 const blacklistedToken = new BlacklistedTokenSchema({
                      token: req.token,
@@ -71,14 +71,14 @@ exports.checkToken = async (req, res, next) => {
                 return next();
             } else {
                 // JWT token is invalid or has expired more than 5 minutes
-                res.status(401).json({ 
+                return res.status(401).json({ 
                     message: 'Autentication failed.', 
                     error: err.message 
                 });
             }
         } else {
             // Continue with the request
-            next();
+            return next();
         }
     });
 }
@@ -138,45 +138,39 @@ exports.refreshToken = async (req, res, next) => {
         return next();
 
     jwt.verify(req.token, process.env.JWT_SECRET, async (err, authorizedData) => {
-        if (err) {
-            // --------------------------------------------------
-            // Handle when JWT token is expired or invalid
-            // --------------------------------------------------
+        // Decode JWT token
+        const decodedJWT = jwt.decode(req.token, { complete: true });
 
-            // Decode JWT token
-            const decodedJWT = jwt.decode(req.token, { complete: true });
-                
-            // If JWT is expired refresh token if it is expired by 5 minutes (max 5 minutes of inactivity)
-            if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300000 >= (Date.now()/1000)) {
-                // Blacklist previous token
-                const blacklistedToken = new BlacklistedTokenSchema({
-                     token: req.token,
-                     expire_at: new Date().setTime((decodedJWT.payload.exp * 1000) + 300000)
-                });
+        // --------------------------------------------------
+        // Handle when JWT token is expired or invalid
+        // --------------------------------------------------
 
-                // Save blacklisted token in database
-                await blacklistedToken.save();
+        // If JWT is expired refresh token if it is expired by 5 minutes (max 5 minutes of inactivity)
+        if (err && !(err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300 >= (Date.now()/1000))) {
+            
+            // Blacklist previous token
+            const blacklistedToken = new BlacklistedTokenSchema({
+                 token: req.token,
+                 expire_at: new Date().setTime((decodedJWT.payload.exp * 1000) + 300000)
+            });
 
-                // Refresh JWT token
-                const userDTO = decodedJWT.payload.userDTO;
-                const token = jwt.sign({ userDTO }, process.env.JWT_SECRET, { expiresIn: 300 });
+            // Save blacklisted token in database
+            await blacklistedToken.save();
 
-                // Erase previous cookie
-                res.clearCookie('JWT_token');
+            // Refresh JWT token
+            const userDTO = decodedJWT.payload.userDTO;
+            const token = jwt.sign({ userDTO }, process.env.JWT_SECRET, { expiresIn: 300 });
 
-                // Set token in cookie
-                res.cookie('JWT_token', token, { httpOnly: true });
+            // Erase previous cookie
+            res.clearCookie('JWT_token');
 
-                // Continue with the request
-                return next();
-            } else {
-                // Continue with the request (JWT token is invalid or has expired more than 5 minutes)
-                return next();
-            }
-        } else {
-            // Continue with the request
-            return next();
+            // Set token in cookie
+            res.cookie('JWT_token', token, { httpOnly: true });   
         }
+    
+        // Continue with the request (JWT token is invalid or has expired more than 5 minutes)
+        return next();
+        
     });
 }
 
