@@ -25,6 +25,9 @@ COPY public /app/public
 # Copy database.js to the container
 COPY database.js .
 
+# Copy views to the container
+COPY views /app/views
+
 # Copy the app.js file to the container
 COPY app.js .
 
