@@ -1,31 +1,30 @@
 {
   "name": "ecovolt-backend",
-  "version": "1.0.0",
-  "description": "A JavaScript project",
-  "main": "./dist/index.js",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "dev:watch": "node ./node_modules/parcel-bundler/bin/cli watch ./src/index.js --target node",
-    "dev:hot-reload": "node ./node_modules/nodemon/bin/nodemon --watch ./dist/ ./dist/index.js",
-    "start": "node ./node_modules/npm-run-all/bin/npm-run-all -p -r dev:watch dev:hot-reload",
-    "build": "node ./node_modules/parcel-bundler/bin/cli build ./src/index.js --target node --out-dir ./dist/",
-    "lint": "node ./node_modules/eslint/bin/eslint . --ext .js --fix"
+    "start": "node ./bin/www",
+    "watch": "nodemon ./bin/www",
+    "dev": "DEBUG=ecovolt-backend:* npm run watch"
   },
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.21.1"
-  },
-  "devDependencies": {
-    "eslint": "^8.57.1",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.31.0",
-    "nodemon": "^3.1.7",
-    "npm-run-all": "^4.1.5",
-    "parcel-bundler": "^1.12.5"
+    "bcrypt": "^5.1.1",
+    "compression": "^1.7.5",
+    "connect-mongo": "^5.1.0",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^16.4.7",
+    "ejs": "~2.6.1",
+    "express": "~4.16.1",
+    "express-async-handler": "^1.2.0",
+    "express-session": "^1.18.1",
+    "express-validator": "^7.2.0",
+    "helmet": "^8.0.0",
+    "http-errors": "~1.6.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.8.3",
+    "morgan": "~1.9.1",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0"
   }
 }
