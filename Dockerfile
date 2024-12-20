@@ -31,9 +31,6 @@ COPY app.js .
 # Copy the package.json file to the container
 COPY package.json .
 
-# Copy .env file to the container
-COPY .env .
-
 # Install the dependencies
 RUN npm install
 
