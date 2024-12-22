@@ -1,13 +1,38 @@
 const jwt = require('jsonwebtoken');
 const BlacklistedTokenSchema = require('../models/backlistedToken');
 
+exports.allowAdmin = (req, res, next) => {
+
+}
+
+exports.allowAdminOrCurrentUser = (req, res, next) => {
+
+}
+
+exports.allowModerator = (req, res, next) => {
+
+}
+
+exports.allowModeratorOrCurrentUser = (req, res, next) => {
+
+}
+
+exports.allowAdminOrModerator = (req, res, next) => {
+    
+}
+
+exports.allowAdminOrModeratorOrCurrentUser = (req, res, next) => {
+
+}
+
 /* Check if token is valid
  * If token is valid, call next()
  * If token is invalid, return 401 HTTP status code (Unauthorized)
  *
  * Function to protect routes
 */
-exports.checkToken = async (req, res, next) => {
+
+exports.allowAuthenticated = async (req, res, next) => {
     // Get JWT token (bearer) from authorization header
     const header = req.headers['authorization'];
     let token = null;
@@ -32,7 +57,7 @@ exports.checkToken = async (req, res, next) => {
 
     // JWT token is blacklisted
     if (blacklistedToken) 
-        return res.status(401).json({ 
+        return res.status(498).json({ 
             message: 'Autentication failed.', 
             error: 'jwt expired' 
         });
@@ -71,7 +96,7 @@ exports.checkToken = async (req, res, next) => {
                 return next();
             } else {
                 // JWT token is invalid or has expired more than 5 minutes
-                return res.status(401).json({ 
+                return res.status(498).json({ 
                     message: 'Autentication failed.', 
                     error: err.message 
                 });
@@ -83,34 +108,10 @@ exports.checkToken = async (req, res, next) => {
     });
 }
 
-exports.isAdmin = (req, res, next) => {
-
-}
-
-exports.isAdminOrCurrentUser = (req, res, next) => {
-
-}
-
-exports.isModerator = (req, res, next) => {
-
-}
-
-exports.isModeratorOrCurrentUser = (req, res, next) => {
-
-}
-
-exports.isAdminOrModerator = (req, res, next) => {
-    
-}
-
-exports.isAdminOrModeratorOrCurrentUser = (req, res, next) => {
-
-}
-
 /* Refresh JWT token when it is expired by 5 minutes (max 5 minutes of inactivity) 
  * Middleware specially thought for no protected routes with autenticated users
 */
-exports.refreshToken = async (req, res, next) => {
+exports.allowAny = async (req, res, next) => {
     // Get JWT token (bearer) from authorization header
     const header = req.headers['authorization'];
     let token = null;
