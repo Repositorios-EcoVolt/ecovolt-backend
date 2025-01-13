@@ -1,3 +1,5 @@
+const asyncHandler = require('express-async-handler');
+
 exports.get_members = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
 

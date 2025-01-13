@@ -29,6 +29,7 @@ exports.login = asyncHandler(async (req, res, next) => {
 
         // Avoid the password attribute in the token
         const userDTO = {
+            id: user._id,
             username: user.username,
             first_name: user.first_name,
             last_name: user.last_name,

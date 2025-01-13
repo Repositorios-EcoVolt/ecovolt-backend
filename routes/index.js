@@ -4,7 +4,6 @@ const router = express.Router();
 const controller = require('../controllers/controller');
 const middleware = require('../controllers/middleware');
 const authController = require('../controllers/authController');
-
 const usersRouter = require('./users');
 
 /* GET home page. */
