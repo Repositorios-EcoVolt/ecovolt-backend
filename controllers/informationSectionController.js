@@ -1,4 +1,5 @@
 const asyncHandler = require('express-async-handler');
+const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const informationSection = require('../models/informationSection');
 
@@ -66,18 +67,52 @@ exports.add_information_section = asyncHandler(async (req, res, next) => {
 exports.add_information_section_picture = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
 
-    try {
-        if(!req.file) {
-            return res.status(400).send({ message: 'File not uploaded!' });
-        }
+    // Handle the uploaded image (manage the request buffer)
+    const fileBuffer = req._readableState.buffer
+    const file = fileBuffer[0];
+    const filename = fileBuffer[1];
 
+    // Define the file path
+    const filePath = `./public/images/${filename}`;
+
+    req.file = file;
+    req.file.filename = filename;
+
+    try {
+        // Check if the file was uploaded
+        if(!fileBuffer) 
+            return res.status(400).send({ message: 'File not uploaded!' });
+
+        // Upload the image to the server
+        fs.writeFileSync('./public/images', req.file, (err) => err && res.status(500).send({ message: err.message }));
+
+        // Search the information section by id
         const updatedInformationSection = await informationSection.findByIdAndUpdate(req.params.id, { picture: req.file.filename, updated_at: new Date() }, { new: true });
 
+        // Check if the information section exists
         if (!updatedInformationSection) {
             return res.status(404).send({ message: 'Information Section not found.' });
         }
 
         res.status(200).send(updatedInformationSection);
+    } catch (err) {
+        res.status(500).send({
+            detail: err.message
+        });
+    }
+});
+
+exports.remove_information_section_picture = asyncHandler(async (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+
+    try {
+        const updatedInformationSection = await informationSection.findByIdAndUpdate(req.params.id, { picture: null, updated_at: new Date() }, { new: true });
+
+        if (!updatedInformationSection) {
+            return res.status(404).send({ message: 'Information Section not found.' });
+        }
+
+        res.status(204).send();
     } catch (err) {
         res.status(500).send({
             detail: err.message

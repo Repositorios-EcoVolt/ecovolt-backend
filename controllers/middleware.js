@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 const csrf = require('csurf');
 const BlacklistedTokenSchema = require('../models/backlistedToken');
 
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
 exports.csrfProtect = csrf({ cookie: true });
 
 exports.allowAdmin = async (req, res, next) => {
@@ -168,10 +172,6 @@ exports.allowAdminOrModerator = async (req, res, next) => {
                 return res.status(403).json({ message: 'The user has not enough privilegies' });
         }
     });    
-}
-
-exports.allowAdminOrModeratorOrCurrentUser = (req, res, next) => {
-
 }
 
 /* Check if token is valid
