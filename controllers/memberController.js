@@ -1,5 +1,13 @@
 const asyncHandler = require('express-async-handler');
+const multer = require('multer')
+const sharp = require('sharp');
+const fs = require('fs');
+
 const member = require('../models/member');
+
+// Configure multer for file upload
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 exports.get_members = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
@@ -77,6 +85,77 @@ exports.add_member = asyncHandler(async (req, res, next) => {
         const savedMember = await newMember.save();
 
         res.status(201).send(savedMember);
+    } catch (err) {
+        res.status(500).send({
+            detail: err.message
+        });
+    }
+});
+
+exports.add_member_picture = asyncHandler(async (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+
+    // Get the file type and file extension
+    const mimeType = req.headers['content-type'];
+    const fileType = mimeType.split('/')[0];
+    const fileExtension = mimeType.split('/')[1];
+
+    // Check if the file is an image (content-type: image)
+    if (fileType !== 'image')
+        return res.status(400).send({ message: 'Only images are allowed.' });
+    
+    // Define the file name
+    const filename = `${req.params.id}.${fileExtension}`;
+
+    // Define the file path and the picture path (the first for the server file system and the second to show in the database)
+    const filePath = `./public/images/members/${filename}`;
+    const picturePath = `/images/members/${filename}`;
+
+    // Set the file and file name as request fields
+    req.file = req.body;
+    req.file.filename = filename;
+
+    try{
+        // Check if the image was uploaded
+        if (!req.file)
+            return res.status(400).send({ message: 'File not uploaded!' });
+
+        // Upload image to the server
+        fs.writeFileSync(filePath, req.file, (err) => err && res.status(500).send({ message: err.message }));
+
+        // Search member by id
+        const updatedMember = await member.findByIdAndUpdate(req.params.id, { picture: picturePath, updated_at: new Date() }, { new: true });
+
+        // Check if the member exists
+        if (!updatedMember)
+            return res.status(404).send({ message: 'Member not found.' });
+
+        // Send the updated member information
+        res.status(200).send(updatedMember);
+    } catch (err) {
+        res.status(500).send({
+            detail: err.message
+        });
+    }
+});
+
+exports.delete_member_picture = asyncHandler(async (req, res, next) => {
+    try{
+        // Search the member by id
+        const memberFound = await member.findById(req.params.id);
+
+        // Check if the member exists
+        if (!memberFound)
+            return res.status(404).send({ message: 'Member not found.' });
+
+        // Erase picture from the server
+        fs.unlinkSync(`./public${memberFound.picture}`, (err) => err && res.status(500).send({ message: err.message }));
+
+        // Update the picture field to null
+        const updatedMember = await member.findByIdAndUpdate(req.params.id, { picture: null, updated_at: new Date() }, { new: true });
+        
+        // Inform the client that the picture was removed
+        res.status(204).send();
     } catch (err) {
         res.status(500).send({
             detail: err.message

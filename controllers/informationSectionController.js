@@ -67,29 +67,29 @@ exports.add_information_section = asyncHandler(async (req, res, next) => {
 exports.add_information_section_picture = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
 
-    // Handle the uploaded image (manage the request buffer)
-    const fileBuffer = req._readableState.buffer
-    const file = fileBuffer[0];
+    // Get the file type and extension
+    const mineType = req.headers['content-type'];
+    const fileType = mineType.split('/')[0];
+    const extension = mineType.split('/')[1];
 
-    // Get the file type
-    const extension = req.headers['content-type'].split('/')[1];
+    // Check if the file is an image (content-type: image)
+    if (fileType !== 'image')
+        return res.status(400).send({ message: 'File is not an image.' });
 
     // Define the file name
     const filename = `${req.params.id}.${extension}`;
-
-    // TODO: Check if the file already exists and it is a image file
 
     // Define the file path and path to show in the database
     const filePath = `./public/images/informationSections/${filename}`;
     const picturePath = `/images/informationSections/${filename}`;
 
     // Set the file and file name to the request
-    req.file = file;
+    req.file = req.body;
     req.file.filename = filename;
 
     try {
         // Check if the file was uploaded
-        if(!fileBuffer) 
+        if(!req.file) 
             return res.status(400).send({ message: 'File not uploaded!' });
 
         // Upload the image to the server
@@ -111,15 +111,21 @@ exports.add_information_section_picture = asyncHandler(async (req, res, next) =>
 });
 
 exports.remove_information_section_picture = asyncHandler(async (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
-
     try {
+        // Search the information section by id
+        const informationSectionFound = await informationSection.findById(req.params.id);
+
+        // Check if the information section exists
+        if (!informationSectionFound)
+            return res.status(404).send({ message: 'Information Section not found.' });
+        
+        // Erase picture from the server
+        fs.unlinkSync(`./public${informationSectionFound.picture}`, (err) => err && res.status(500).send({ message: err.message }));
+
+        // Update the information section with picture field to null
         const updatedInformationSection = await informationSection.findByIdAndUpdate(req.params.id, { picture: null, updated_at: new Date() }, { new: true });
 
-        if (!updatedInformationSection) {
-            return res.status(404).send({ message: 'Information Section not found.' });
-        }
-
+        // Inform the client that the picture was removed
         res.status(204).send();
     } catch (err) {
         res.status(500).send({
