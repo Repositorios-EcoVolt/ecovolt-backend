@@ -70,11 +70,20 @@ exports.add_information_section_picture = asyncHandler(async (req, res, next) =>
     // Handle the uploaded image (manage the request buffer)
     const fileBuffer = req._readableState.buffer
     const file = fileBuffer[0];
-    const filename = fileBuffer[1];
 
-    // Define the file path
-    const filePath = `./public/images/${filename}`;
+    // Get the file type
+    const extension = req.headers['content-type'].split('/')[1];
 
+    // Define the file name
+    const filename = `${req.params.id}.${extension}`;
+
+    // TODO: Check if the file already exists and it is a image file
+
+    // Define the file path and path to show in the database
+    const filePath = `./public/images/informationSections/${filename}`;
+    const picturePath = `/images/informationSections/${filename}`;
+
+    // Set the file and file name to the request
     req.file = file;
     req.file.filename = filename;
 
@@ -84,15 +93,14 @@ exports.add_information_section_picture = asyncHandler(async (req, res, next) =>
             return res.status(400).send({ message: 'File not uploaded!' });
 
         // Upload the image to the server
-        fs.writeFileSync('./public/images', req.file, (err) => err && res.status(500).send({ message: err.message }));
+        fs.writeFileSync(filePath, req.file, (err) => err && res.status(500).send({ message: err.message }));
 
         // Search the information section by id
-        const updatedInformationSection = await informationSection.findByIdAndUpdate(req.params.id, { picture: req.file.filename, updated_at: new Date() }, { new: true });
+        const updatedInformationSection = await informationSection.findByIdAndUpdate(req.params.id, { picture: picturePath, updated_at: new Date() }, { new: true });
 
         // Check if the information section exists
-        if (!updatedInformationSection) {
+        if (!updatedInformationSection)
             return res.status(404).send({ message: 'Information Section not found.' });
-        }
 
         res.status(200).send(updatedInformationSection);
     } catch (err) {
@@ -126,10 +134,9 @@ exports.publish_information_section = asyncHandler(async (req, res, next) => {
     try {
         const publishedInformationSection = await informationSection.findByIdAndUpdate(req.params.id, { active: true, updated_at: new Date() }, { new: true });
 
-        if (!publishedInformationSection) {
+        if (!publishedInformationSection) 
             return res.status(404).send({ message: 'Information Section not found.' });
-        }
-
+            
         res.status(200).send(publishedInformationSection);
     } catch (err) {
         res.status(500).send({
@@ -144,10 +151,9 @@ exports.hide_information_section = asyncHandler(async (req, res, next) => {
     try {
         const hiddenInformationSection = await informationSection.findByIdAndUpdate(req.params.id, { active: false, updated_at: new Date() }, { new: true });
 
-        if (!hiddenInformationSection) {
+        if (!hiddenInformationSection)
             return res.status(404).send({ message: 'Information Section not found.' });
-        }
-
+        
         res.status(200).send(hiddenInformationSection);
     } catch (err) {
         res.status(500).send({
