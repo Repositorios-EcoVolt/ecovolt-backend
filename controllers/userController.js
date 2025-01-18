@@ -220,6 +220,109 @@ exports.get_user = asyncHandler(async function (req, res, next) {
 });
 
 
+exports.get_user_by_id = asyncHandler(async function (req, res, next) {
+    res.setHeader('Content-Type', 'application/json');
+
+    // Get user object
+    const userFound = await UserSchema.findById(req.params.id);
+
+    // Check if user exists
+    if (!userFound) 
+        return res.status(404).send({
+            detail: 'User not found.'
+        });
+
+    // Get JWT token (bearer) from authorization header
+    const header = req.headers['authorization'];
+    let token = null;
+
+    if (typeof header !== 'undefined') {
+        // Extract token from header
+        const bearer = header.split(' ');
+        token = bearer[1];
+    } else {
+        // Extract token from cookie
+        if(req.cookies['JWT_token'])
+            token = req.cookies['JWT_token'];
+        else 
+            // JWT token not provided
+            return res.status(200).send({
+                username: userFound.username,
+                first_name: userFound.first_name,
+                last_name: userFound.last_name
+            });
+    }
+
+    req.token = token;
+
+    // Check if token is blacklisted
+    const blacklistedToken = await BlacklistedTokenSchema.findOne({ token: token});
+
+    // If JWT token is blacklisted
+    if (blacklistedToken)
+        return res.status(200).send({
+            username: userFound.username,
+            first_name: userFound.first_name,
+            last_name: userFound.last_name
+        });
+
+    // Verify if a user is logged in through JWT token
+    jwt.verify(req.token, process.env.JWT_SECRET, async (err, authorizedData) => {
+        if (err) {
+            // --------------------------------------------------
+            // Handle when JWT token is expired or invalid
+            // --------------------------------------------------
+            
+            // Decode JWT token
+            const decodedJWT = jwt.decode(req.token, { complete: true });
+
+            // If JWT is expired refresh token if it is expired by 5 minutes (max 5 minutes of inactivity)
+            if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300 >= (Date.now()/1000)) {
+                // Blacklist previous token
+                const blacklistedToken = new BlacklistedTokenSchema({ 
+                    token: req.token,
+                    expire_at: new Date().setTime((decodedJWT.payload.exp * 1000) + 300000)
+                });
+
+                // Save blacklisted token in database
+                await blacklistedToken.save();
+
+                // Refresh JWT token
+                const userDTO = decodedJWT.payload.userDTO;
+                const token = jwt.sign({ userDTO }, process.env.JWT_SECRET, { expiresIn: 300 });
+            
+                // Erase previous cookie
+                res.clearCookie('JWT_token');
+            
+                // Set token in cookie
+                res.cookie('JWT_token', token, { httpOnly: true });            
+ 
+            } else {
+                // No valid JWT token
+                return res.status(200).send({
+                    username: userFound.username,
+                    first_name: userFound.first_name,
+                    last_name: userFound.last_name
+                });
+            } 
+        }
+    });
+
+    // Return user data (DTO)
+    res.status(200).send({
+        id: userFound._id,
+        username: userFound.username,
+        first_name: userFound.first_name,
+        last_name: userFound.last_name,
+        email: userFound.email,
+        roles: userFound.roles,
+        created_at: userFound.created_at,
+        updated_at: userFound.updated_at,
+        last_login: userFound.last_login
+    });
+});
+
+
 exports.get_users = asyncHandler(async function (req, res, next) {
     res.setHeader('Content-Type', 'application/json');
 
@@ -228,6 +331,7 @@ exports.get_users = asyncHandler(async function (req, res, next) {
 
         const usersDTO = users.map((user) => {
             return {
+                id: user._id,
                 username: user.username,
                 first_name: user.first_name,
                 last_name: user.last_name,

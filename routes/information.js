@@ -5,7 +5,7 @@ const informationController = require('../controllers/informationSectionControll
 const middleware = require('../controllers/middleware');
 
 /* Show all information sections */
-router.get('/', middleware.allowAny, informationController.get_information_sections);
+router.get('/', informationController.get_information_sections);
 
 /* Add new information section */
 router.post('/add', middleware.allowAdminOrModerator, informationController.add_information_section);

@@ -2,10 +2,6 @@ const jwt = require('jsonwebtoken');
 const csrf = require('csurf');
 const BlacklistedTokenSchema = require('../models/backlistedToken');
 
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
 exports.csrfProtect = csrf({ cookie: true });
 
 exports.allowAdmin = async (req, res, next) => {
@@ -39,17 +35,17 @@ exports.allowAdmin = async (req, res, next) => {
         });
 
     jwt.verify(req.token, process.env.JWT_SECRET, async (err, authorizedData) => {
-        if (err) {
-            // --------------------------------------------------
-            // Handle when JWT token is expired or invalid
-            // --------------------------------------------------
+        // --------------------------------------------------
+        // Handle when JWT token is expired or invalid
+        // --------------------------------------------------
 
-            // Decode JWT token
-            const decodedJWT = jwt.decode(req.token, { complete: true });
+        // Decode JWT token
+        const decodedJWT = jwt.decode(req.token, { complete: true });
 
-            // User data
-            const userDTO = decodedJWT.payload.userDTO;
-                
+        // User data
+        const userDTO = decodedJWT.payload.userDTO;
+            
+        if (err) {                
             // If JWT is expired refresh token if it is expired by 5 minutes (max 5 minutes of inactivity)
             if (err.name === 'TokenExpiredError' && decodedJWT.payload.exp + 300 >= (Date.now()/1000)) {
                 // Blacklist previous token
@@ -315,7 +311,7 @@ exports.allowAny = async (req, res, next) => {
             res.clearCookie('JWT_token');
 
             // Set token in cookie
-            res.cookie('JWT_token', token, { httpOnly: true });   
+            res.cookie('JWT_token', token, { httpOnly: true, secure: true });   
         }
     
         // Continue with the request (JWT token is invalid or has expired more than 5 minutes)

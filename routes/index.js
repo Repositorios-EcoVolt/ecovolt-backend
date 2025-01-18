@@ -10,6 +10,6 @@ const usersRouter = require('./users');
 router.get('/', middleware.allowAny, controller.health_check);
 router.post('/login', authController.login);
 router.get('/logout', authController.logout);
-router.get('/users', usersRouter);
+// router.get('/users', usersRouter);
 
 module.exports = router;

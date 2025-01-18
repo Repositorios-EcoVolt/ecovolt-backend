@@ -1,13 +1,7 @@
 const asyncHandler = require('express-async-handler');
-const multer = require('multer')
-const sharp = require('sharp');
 const fs = require('fs');
 
 const member = require('../models/member');
-
-// Configure multer for file upload
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
 
 exports.get_members = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
@@ -130,8 +124,21 @@ exports.add_member_picture = asyncHandler(async (req, res, next) => {
         if (!updatedMember)
             return res.status(404).send({ message: 'Member not found.' });
 
+        // Create member DTO
+        const memberDTO = {
+            id: updatedMember._id,
+            first_name: updatedMember.first_name,
+            last_name: updatedMember.last_name,
+            picture: updatedMember.picture,
+            information: updatedMember.information,
+            joined_at: updatedMember.joined_at,
+            ended_at: updatedMember.ended_at,
+            uploaded_at: updatedMember.uploaded_at,
+            updated_at: updatedMember.updated_at
+        };
+
         // Send the updated member information
-        res.status(200).send(updatedMember);
+        res.status(200).send(memberDTO);
     } catch (err) {
         res.status(500).send({
             detail: err.message
