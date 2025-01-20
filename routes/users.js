@@ -16,8 +16,11 @@ router.get('/:id', userController.get_user_by_id);
 /* Create new user */
 router.post('/create', middleware.allowAdmin, userController.create_user);
 
-/* Update user (for example change password or suspend account) */
+/* Update user (for example suspend account) */
 router.put('/update/:id', userController.update_user);
+
+/* Update user password */
+router.patch('/update-password/:id', userController.update_user_password);
 
 /* Delete user */
 router.delete('/delete/:username', middleware.allowAdmin, userController.delete_user);

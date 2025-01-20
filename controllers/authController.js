@@ -20,7 +20,7 @@ exports.login = asyncHandler(async (req, res, next) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid password or password.' });
+            return res.status(401).json({ message: 'Invalid username or password.' });
         }
 
         // Modify last login attribute in database
@@ -48,7 +48,7 @@ exports.login = asyncHandler(async (req, res, next) => {
 
         return res.status(200).json({ token: token });
     } catch (err) {
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ message: err.message });
     }
 })
 
