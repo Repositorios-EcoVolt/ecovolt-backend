@@ -186,7 +186,6 @@ exports.update_member = asyncHandler(async (req, res, next) => {
         const updatedMember = await member.findByIdAndUpdate(req.params.id, {
             first_name: req.body.first_name? req.body.first_name:memberFound.first_name,
             last_name: req.body.last_name? req.body.last_name:memberFound.last_name,
-            picture: req.body.picture? req.body.picture:memberFound.picture,
             information: req.body.information? req.body.information:memberFound.information,
             joined_at: req.body.joined_at? req.body.joined_at:memberFound.joined_at,
             ended_at: req.body.ended_at? req.body.ended_at:memberFound.ended_at,

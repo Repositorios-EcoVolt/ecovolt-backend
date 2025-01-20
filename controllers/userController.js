@@ -480,7 +480,7 @@ exports.update_user = asyncHandler(async function (req, res, next) {
                     updatedUser.first_name === userFound.first_name && 
                     updatedUser.last_name === userFound.last_name && 
                     updatedUser.email === userFound.email && 
-                    updatedUser.roles === userFound.roles && 
+                    updatedUser.roles[0] === userFound.roles[0] && 
                     updatedUser.active === userFound.active)
                     return res.status(304).send();
 
@@ -670,6 +670,17 @@ exports.update_user_password = [
                         detail: 'User not found.'
                     });
 
+                // Check for old password if the user is the same that will be updated
+                if (decodedJWT.payload.userDTO.id == req.params.id)
+                    // Check if the password is the same as the previous one
+                    bcrypt.compare(req.body.old_password, userFound.password, async (err, result) => {
+                        // If the password is not the same that the previous one or other errors
+                        if (!result || err)
+                            return res.status(401).send({
+                                detail: 'Unauthorized.'
+                            });
+                    });
+                
                 // Check if the password is the same as the previous one
                 bcrypt.compare(req.body.password, userFound.password, async (err, result) => {
                     if (result) {

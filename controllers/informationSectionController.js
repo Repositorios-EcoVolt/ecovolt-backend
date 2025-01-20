@@ -323,7 +323,6 @@ exports.update_information_section = asyncHandler(async (req, res, next) => {
             title: req.body.title? req.body.title:previousInformationSection.title,
             subtitle: req.body.subtitle? req.body.subtitle:previousInformationSection.subtitle, 
             content: req.body.content? req.body.content:previousInformationSection.content, 
-            picture: req.body.picture? req.body.picture:previousInformationSection.picture, 
             updated_by: userDTO.id, 
             updated_at: new Date(),
             active: req.body.active? req.body.active:previousInformationSection.active
