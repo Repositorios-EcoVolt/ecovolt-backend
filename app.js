@@ -14,6 +14,20 @@ var informationRouter = require('./routes/information');
 const useDatabase = require('./database');
 useDatabase().catch((err) => console.error(err));
 
+// Web Socket
+const { Server } = require('socket.io');
+const io = new Server(8080);
+
+io.on('connection', (socket) => {
+  // Receive a message from the client
+  socket.on('send_telemetry', (msg) => {
+    console.log('Message received: ' + msg);
+    // Send the message to all client (including the sender, broadcast)
+    io.emit('send_telemetry', msg);
+  });
+});
+
+
 var app = express();
 
 // view engine setup
