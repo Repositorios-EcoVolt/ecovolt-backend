@@ -16,26 +16,27 @@ useDatabase().catch((err) => console.error(err));
 
 // Web Socket
 const { Server } = require('socket.io');
-const io = new Server(8000);
+const io = new Server(8080);
 
 io.on('connection', (socket) => {
   // Log when a client connects to the server
   socket.on('connect', (client) => {
-    console.log('Client connected');
-  });
-
-  // Log when a client disconnects from the server
-  socket.on('disconnect', (client) => {
-    console.log('Client disconnected');
+    // console.log('Socket ID: ', socket);
+    console.log('Client ID: ', client);
   });
 
   // Receive a message from the client
   socket.on('send_telemetry', (msg) => {
     // Log the message
-    console.log('Message received: ' + msg);
+    console.log('Message received: ' + msg.toString());
 
     // Send the message to all clients (including the sender, broadcast)
     io.emit('send_telemetry', msg);
+  });
+
+  // Log when a client disconnects from the server
+  socket.on('disconnect', (client) => {
+    console.log('Client disconnected');
   });
 });
 
