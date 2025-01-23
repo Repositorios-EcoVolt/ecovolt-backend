@@ -37,8 +37,9 @@ COPY package.json .
 # Install the dependencies
 RUN npm install
 
-# Expose the port
+# Expose the ports
 EXPOSE 8000
+EXPOSE 8080
 
 # Start the application
 CMD ["npm", "start"]
