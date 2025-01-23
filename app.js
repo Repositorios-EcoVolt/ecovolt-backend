@@ -19,15 +19,17 @@ const { Server } = require('socket.io');
 const io = new Server(8080);
 
 io.on('connection', (socket) => {
-  console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}]  Connected to  websocket server at port ${io.httpServer.address().port}`);
+  console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}]  Connected to websocket server at port ${io.httpServer.address().port}`);
   
   // Receive a message from the client
   socket.on('send_telemetry', (msg) => {
+    // Deserialize the message
+    const message = JSON.stringify(msg);
+
     // Log the message
-    console.log(typeof msg);
-    console.log('Message received: ' + msg.toString());
-    console.log('Message received: ' + msg.toString('utf8'));
-    console.log('Message received: ' + msg);
+    console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}] - Message: ${message}`);
+
+    // TODO: Save the message to the database and analyze it over the time (time series)
 
     // Send the message to all clients (including the sender, broadcast)
     io.emit('send_telemetry', msg);
