@@ -19,24 +19,22 @@ const { Server } = require('socket.io');
 const io = new Server(8080);
 
 io.on('connection', (socket) => {
-  // Log when a client connects to the server
-  socket.on('connect', (client) => {
-    // console.log('Socket ID: ', socket);
-    console.log('Client ID: ', client);
-  });
-
+  console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}]  Connected to  websocket server at port ${io.httpServer.address().port}`);
+  
   // Receive a message from the client
   socket.on('send_telemetry', (msg) => {
     // Log the message
+    console.log(typeof msg);
     console.log('Message received: ' + msg.toString());
+    console.log('Message received: ' + msg.toString('utf8'));
+    console.log('Message received: ' + msg);
 
     // Send the message to all clients (including the sender, broadcast)
     io.emit('send_telemetry', msg);
   });
 
-  // Log when a client disconnects from the server
-  socket.on('disconnect', (client) => {
-    console.log('Client disconnected');
+  socket.on('disconnect', () => {
+    console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}]  Disconnected from websocket server at port ${io.httpServer.address().port}`);
   });
 });
 

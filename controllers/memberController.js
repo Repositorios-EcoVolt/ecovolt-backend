@@ -159,6 +159,10 @@ exports.add_member = asyncHandler(async (req, res, next) => {
 exports.add_member_picture = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
 
+    // Decode JWT token to get user information of who is updating the member
+    const decodedJWT = jwt.decode(req.token, { complete: true });
+    const userDTO = decodedJWT.payload.userDTO;
+
     // Get the file type and file extension
     const mimeType = req.headers['content-type'];
     const fileType = mimeType.split('/')[0];
@@ -188,7 +192,11 @@ exports.add_member_picture = asyncHandler(async (req, res, next) => {
         fs.writeFileSync(filePath, req.file, (err) => err && res.status(500).send({ message: err.message }));
 
         // Search member by id
-        const updatedMember = await member.findByIdAndUpdate(req.params.id, { picture: picturePath, updated_at: new Date() }, { new: true });
+        const updatedMember = await member.findByIdAndUpdate(req.params.id, { 
+            picture: picturePath, 
+            updated_at: new Date(),
+            updated_by: userDTO.id
+        }, { new: true });
 
         // Check if the member exists
         if (!updatedMember)
@@ -199,12 +207,16 @@ exports.add_member_picture = asyncHandler(async (req, res, next) => {
             id: updatedMember._id,
             first_name: updatedMember.first_name,
             last_name: updatedMember.last_name,
+            areas: updatedMember.areas,
             picture: updatedMember.picture,
             information: updatedMember.information,
             joined_at: updatedMember.joined_at,
             ended_at: updatedMember.ended_at,
             uploaded_at: updatedMember.uploaded_at,
-            updated_at: updatedMember.updated_at
+            uploaded_by: updatedMember.uploaded_by,
+            updated_at: updatedMember.updated_at,
+            updated_by: updatedMember.updated_by,
+            active: updatedMember.active
         };
 
         // Send the updated member information
@@ -218,6 +230,10 @@ exports.add_member_picture = asyncHandler(async (req, res, next) => {
 
 exports.delete_member_picture = asyncHandler(async (req, res, next) => {
     try{
+        // Decode JWT token to get user information of who is updating the member
+        const decodedJWT = jwt.decode(req.token, { complete: true });
+        const userDTO = decodedJWT.payload.userDTO;
+
         // Search the member by id
         const memberFound = await member.findById(req.params.id);
 
@@ -229,7 +245,11 @@ exports.delete_member_picture = asyncHandler(async (req, res, next) => {
         fs.unlinkSync(`./public${memberFound.picture}`, (err) => err && res.status(500).send({ message: err.message }));
 
         // Update the picture field to null
-        const updatedMember = await member.findByIdAndUpdate(req.params.id, { picture: null, updated_at: new Date() }, { new: true });
+        await member.findByIdAndUpdate(req.params.id, { 
+            picture: null, 
+            updated_at: new Date(), 
+            updated_by: userDTO.id 
+        }, { new: true });
         
         // Inform the client that the picture was removed
         return res.status(204).send();

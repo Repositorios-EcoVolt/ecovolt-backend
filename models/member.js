@@ -12,7 +12,7 @@ const MemberSchema = new Schema({
     uploaded_at: { type: Date, required: true },
     uploaded_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     updated_at: { type: Date, required: false },
-    updated_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     active: { type: Boolean, default: true, required: true }
 });
 
