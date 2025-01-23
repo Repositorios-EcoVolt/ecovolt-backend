@@ -16,7 +16,7 @@ useDatabase().catch((err) => console.error(err));
 
 // Web Socket
 const { Server } = require('socket.io');
-const io = new Server(8080);
+const io = new Server('wss://api.ecovolt.info');
 
 io.on('connection', (socket) => {
   console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}]  Connected to websocket server at port ${io.httpServer.address().port}`);
