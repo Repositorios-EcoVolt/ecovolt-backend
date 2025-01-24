@@ -20,6 +20,32 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+var io = require('socket.io')(server);
+
+/**
+ * Settings for WebSockets 
+ */
+
+io.on('connection', (socket) => {
+  console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}]  Connected to websocket server at port ${io.httpServer.address().port}`);
+  
+  socket.on('send_telemetry', (msg) => {
+    // Get the message (deserialize)
+    const message = JSON.stringify(msg);
+
+    // Log the message
+    console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}] - Message: ${message}`);
+
+    // TODO: Save the message to the database and analyze it over the time (time series)
+
+    // Send the message to all clients (including the sender, broadcast)
+    io.emit('send_telemetry', msg);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Socket ID: [${socket.id}] - Item type: [${socket.handshake.query.connectItemType}] - Username: [${socket.handshake.query.username}]  Disconnected from websocket server at port ${io.httpServer.address().port}`);
+  });
+});
 
 /**
  * Listen on provided port, on all network interfaces.
