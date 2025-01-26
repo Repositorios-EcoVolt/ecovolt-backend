@@ -8,6 +8,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var membersRouter = require('./routes/members');
+var galleryRouter = require('./routes/gallery');
 var informationRouter = require('./routes/information');
 
 // Database
@@ -32,6 +33,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/information', informationRouter);
 app.use('/information/member', membersRouter);
+app.use('/information/gallery', galleryRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

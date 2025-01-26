@@ -117,25 +117,26 @@ exports.get_information_sections = asyncHandler(async (req, res, next) => {
 
                     // Send all information sections for authenticated users
                     return res.status(200).send(informationSectionsDTO);
-                } else {
-                    // JWT token is invalid or has expired more than 5 minutes
-                    const informationSectionsDTO = informationSections.map((section) => {
-                        return {
-                            title: section.title,
-                            subtitle: section.subtitle,
-                            content: section.content,
-                            picture: section.picture,
-                            created_by: section.created_by,
-                            updated_by: section.updated_by,
-                            created_at: section.created_at,
-                            updated_at: section.updated_at,
-                        }
-                
-                    }).filter((section) => section.active);
+                } 
 
-                    // Send only active information sections for unauthenticated users
-                    return res.status(200).send(informationSectionsDTO);
-                }
+                // JWT token is invalid or has expired more than 5 minutes
+                const informationSectionsDTO = informationSections.map((section) => {
+                    return {
+                        title: section.title,
+                        subtitle: section.subtitle,
+                        content: section.content,
+                        picture: section.picture,
+                        created_by: section.created_by,
+                        updated_by: section.updated_by,
+                        created_at: section.created_at,
+                        updated_at: section.updated_at,
+                    }
+            
+                }).filter((section) => section.active);
+
+                // Send only active information sections for unauthenticated users
+                return res.status(200).send(informationSectionsDTO);
+            
             } else {
                 // Get information sections DTO for authenticated users
                 const informationSectionsDTO = informationSections.map((section) => {
@@ -276,9 +277,9 @@ exports.publish_information_section = asyncHandler(async (req, res, next) => {
         if (!publishedInformationSection) 
             return res.status(404).send({ message: 'Information Section not found.' });
             
-        res.status(200).send(publishedInformationSection);
+        return res.status(200).send(publishedInformationSection);
     } catch (err) {
-        res.status(500).send({
+        return res.status(500).send({
             detail: err.message
         });
     }

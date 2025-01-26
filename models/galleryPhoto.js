@@ -13,7 +13,7 @@ const GalleryPhotoSchema = new Schema({
 });
 
 // Name appears in alt <img alt="name">
-UserSchema.virtual('alt').get(function() {
+GalleryPhotoSchema.virtual('alt').get(function() {
     return this.name;
 });
 
