@@ -86,7 +86,7 @@ exports.create_user = [
     asyncHandler(async function (req, res, next) {
         res.setHeader('Content-Type', 'application/json');
 
-        const errors = validationResult(req);
+        const errors = validationResult(req.body);
         const { password } = req.body;
 
         if (!errors.isEmpty())
@@ -110,7 +110,7 @@ exports.create_user = [
                     last_name: req.body.last_name,
                     email: req.body.email,
                     password: hashedPassword,
-                    roles: [req.body.role],
+                    roles: req.body.roles,
                     created_at: new Date(),
                     updated_at: null,
                     last_login: null,
