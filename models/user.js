@@ -11,7 +11,7 @@ const UserSchema = new Schema({
     created_at: { type: Date, required: true },
     updated_at: { type: Date, required: false },
     last_login: { type: Date, required: false },
-    verified: { type: Boolean, required: false },
+    verified: { type: Boolean, default: false, required: false },
     active: { type: Boolean, default: true, required: false }
 });
 

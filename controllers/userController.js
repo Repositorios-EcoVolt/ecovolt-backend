@@ -550,30 +550,30 @@ exports.update_user = asyncHandler(async function (req, res, next) {
 
 exports.update_user_password = [
     // Fields
-    body('password', 'Password must not be empty.').trim().isLength({ min: 1}).escape(),
+    body('new_password', 'New password must not be empty.').trim().isLength({ min: 1}).escape(),
 
     // Validators
-    body('password').custom(async (value) => {
+    body('new_password').custom(async (value) => {
         if (!value.match(/[A-Z]/))
-            throw new Error('Password must contain at least one uppercase letter.');
+            throw new Error('New password must contain at least one uppercase letter.');
 
         if (!value.match(/[a-z]/))
-            throw new Error('Password must contain at least one lowercase letter.');
+            throw new Error('New password must contain at least one lowercase letter.');
 
         if (!value.match(/[0-9]/))
-            throw new Error('Password must contain at least one number.');
+            throw new Error('New password must contain at least one number.');
         
         if (!value.match(/[!@#$%^&*()-_=+\\|\[\]{};:?.><]/))
-            throw new Error('Password must contain at least one special character.');
+            throw new Error('New password must contain at least one special character.');
 
         if(value.length < 12)
-            throw new Error('Password must be at least 12 characters long.');
+            throw new Error('New password must be at least 12 characters long.');
 
         // TO DO: Add more common passwords using MongoDB database
         const commonPasswords = ['1230', 'password']
 
         if (commonPasswords.includes(value)) {
-            throw new Error('Password is too common.');
+            throw new Error('New password is too common.');
         }
         
         return true;
@@ -682,82 +682,72 @@ exports.update_user_password = [
                     });
                 
                 // Check if the password is the same as the previous one
-                bcrypt.compare(req.body.password, userFound.password, async (err, result) => {
-                    if (result) {
+                bcrypt.compare(req.body.new_password, userFound.password, async (err, result) => {
+                    if (result)
                         return res.status(304).send();
-                    } else {
-                        // Validators 
-                        body('password').custom(async (value) => {
-                            if (value.includes(userFound.username))
-                                return res.status(400).send({
-                                    detail: 'Password must not contain the username.'
-                                });
-
-                            if (value.includes(userFound.first_name))
-                                return res.status(400).send({
-                                    detail: 'Password must not contain the first name.'
-                                });
-        
-                            if (value.includes(userFound.last_name))
-                                return res.status(400).send({
-                                    detail: 'Password must not contain the last name.'
-                                });
-        
-                            if (value.includes(userFound.email))
-                                return res.status(400).send({
-                                    detail: 'Password must not contain the email.'
-                                });
-        
-                            // TO DO: Add more common passwords using MongoDB database
-                            const commonPasswords = ['1230', 'password']
-        
-                            if (commonPasswords.includes(req.body.password))
-                                return res.status(400).send({
-                                    detail: 'Password is too common.'
-                                });
-
-                            return true;
-                        }); 
-
-                        // Catch validation errors (if any)
-                        const errors = validationResult(req);
-
-                        // If there are errors, return them
-                        if (!errors.isEmpty())
+                    
+                    // Validators 
+                    body('new_password').custom(async (value) => {
+                        if (value.includes(userFound.username))
                             return res.status(400).send({
-                                details: errors.array()
+                                detail: 'New password must not contain the username.'
                             });
 
-                        // Password encryption
-                        // Algorith: The Blowfish cipher algorithm (bcrypt)
-                        // Rounds (salts): 10
-                        bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
-                            if (err)
-                                return res.status(500).send({
-                                    details: err.message 
-                                });
-                            
-                            // Update user password
-                            const updatedUser = await UserSchema.findByIdAndUpdate(req.params.id, {
-                                password: hashedPassword,
-                                updated_at: new Date()
-                            }, { new: true });
-
-                            // Show success message
-                            return res.status(200).send({
-                                message: "Password for user '" + updatedUser.username + "' updated successfully.",
+                        if (value.includes(userFound.first_name))
+                            return res.status(400).send({
+                                detail: 'New password must not contain the first name.'
                             });
+        
+                        if (value.includes(userFound.last_name))
+                            return res.status(400).send({
+                                detail: 'New password must not contain the last name.'
+                            });
+        
+                        if (value.includes(userFound.email))
+                            return res.status(400).send({
+                                detail: 'New password must not contain the email.'
+                            });
+    
+
+                        return true;
+                    }); 
+
+                    // Catch validation errors (if any)
+                    const errors = validationResult(req);
+
+                    // If there are errors, return them
+                    if (!errors.isEmpty())
+                        return res.status(400).send({
+                            details: errors.array()
                         });
-                    }
-                });
-            });
 
+                    // Password encryption
+                    // Algorith: The Blowfish cipher algorithm (bcrypt)
+                    // Rounds (salts): 10
+                    bcrypt.hash(req.body.new_password, 10, async (err, hashedPassword) => {
+                        if (err)
+                            return res.status(500).send({
+                                details: err.message 
+                            });
+                            
+                        // Update user password
+                        const updatedUser = await UserSchema.findByIdAndUpdate(req.params.id, {
+                            password: hashedPassword,
+                            updated_at: new Date()
+                        }, { new: true });
+
+                        // Show success message
+                        return res.status(200).send({
+                            message: "Password for user '" + updatedUser.username + "' successfully updated.",
+                        });
+                    });
+                });
+            }); 
         } catch (err) {
             return res.status(500).send({
                 details: err.message
             });
         }
-        
     })
 ];
 
