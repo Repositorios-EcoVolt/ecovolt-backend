@@ -1,9 +1,7 @@
 const jwt = require('jsonwebtoken');
-const csrf = require('csurf');
 const BlacklistedTokenSchema = require('../models/backlistedToken');
 
-exports.csrfProtect = csrf({ cookie: true });
-
+/* Check if token is valid and if the user is admin */
 exports.allowAdmin = async (req, res, next) => {
     // Get JWT token (bearer) from authorization header
     const header = req.headers['authorization'];
@@ -64,7 +62,7 @@ exports.allowAdmin = async (req, res, next) => {
                 res.clearCookie('JWT_token');
 
                 // Set token in cookie
-                res.cookie('JWT_token', token, { httpOnly: true });
+                res.cookie('JWT_token', token, { httpOnly: true, secure: true });
 
                 // Check if user is admin
                 if (userDTO.roles[0] === 'admin')
@@ -146,7 +144,7 @@ exports.allowAdminOrModerator = async (req, res, next) => {
                 res.clearCookie('JWT_token');
 
                 // Set token in cookie
-                res.cookie('JWT_token', token, { httpOnly: true });
+                res.cookie('JWT_token', token, { httpOnly: true, secure: true });
 
                 // Check if user is admin or moderator
                 if (userDTO.roles[0] === 'admin' || userDTO.roles[0] === 'moderator')
@@ -235,7 +233,7 @@ exports.allowAuthenticated = async (req, res, next) => {
                 res.clearCookie('JWT_token');
 
                 // Set token in cookie
-                res.cookie('JWT_token', token, { httpOnly: true });
+                res.cookie('JWT_token', token, { httpOnly: true, secure: true });
 
                 // Continue with the request
                 return next();
