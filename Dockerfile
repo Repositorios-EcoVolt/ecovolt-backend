@@ -1,5 +1,5 @@
 # Use base image
-FROM node:20.12.2
+FROM node:24.0.1-slim
 
 # Create a directory in the container to store the app
 RUN mkdir /app
@@ -18,6 +18,12 @@ COPY models /app/models
 
 # Copy the routes to the container
 COPY routes /app/routes
+
+# Copy services to the container
+COPY services /app/services
+
+# Copy config to the container
+COPY config /app/config
 
 # Copy the public folder to the container (static files)
 COPY public /app/public
